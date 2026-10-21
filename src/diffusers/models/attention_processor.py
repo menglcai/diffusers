@@ -1447,14 +1447,18 @@ class JointAttnProcessor2_0:
         inner_dim = key.shape[-1]
         head_dim = inner_dim // attn.heads
 
-        query = query.view(batch_size, -1, attn.heads, head_dim).transpose(1, 2)
-        key = key.view(batch_size, -1, attn.heads, head_dim).transpose(1, 2)
-        value = value.view(batch_size, -1, attn.heads, head_dim).transpose(1, 2)
+        query = query.view(batch_size, -1, attn.heads, head_dim)
+        key = key.view(batch_size, -1, attn.heads, head_dim)
+        value = value.view(batch_size, -1, attn.heads, head_dim)
 
         if attn.norm_q is not None:
             query = attn.norm_q(query)
         if attn.norm_k is not None:
             key = attn.norm_k(key)
+
+        query = query.transpose(1, 2)
+        key = key.transpose(1, 2)
+        value = value.transpose(1, 2)
 
         # `context` projections.
         if encoder_hidden_states is not None:
@@ -1464,18 +1468,20 @@ class JointAttnProcessor2_0:
 
             encoder_hidden_states_query_proj = encoder_hidden_states_query_proj.view(
                 batch_size, -1, attn.heads, head_dim
-            ).transpose(1, 2)
-            encoder_hidden_states_key_proj = encoder_hidden_states_key_proj.view(
-                batch_size, -1, attn.heads, head_dim
-            ).transpose(1, 2)
+            )
+            encoder_hidden_states_key_proj = encoder_hidden_states_key_proj.view(batch_size, -1, attn.heads, head_dim)
             encoder_hidden_states_value_proj = encoder_hidden_states_value_proj.view(
                 batch_size, -1, attn.heads, head_dim
-            ).transpose(1, 2)
+            )
 
             if attn.norm_added_q is not None:
                 encoder_hidden_states_query_proj = attn.norm_added_q(encoder_hidden_states_query_proj)
             if attn.norm_added_k is not None:
                 encoder_hidden_states_key_proj = attn.norm_added_k(encoder_hidden_states_key_proj)
+
+            encoder_hidden_states_query_proj = encoder_hidden_states_query_proj.transpose(1, 2)
+            encoder_hidden_states_key_proj = encoder_hidden_states_key_proj.transpose(1, 2)
+            encoder_hidden_states_value_proj = encoder_hidden_states_value_proj.transpose(1, 2)
 
             query = torch.cat([query, encoder_hidden_states_query_proj], dim=2)
             key = torch.cat([key, encoder_hidden_states_key_proj], dim=2)
